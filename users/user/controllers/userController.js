@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require("express");
 const User = require("../model/User");
 const Token = require("../model/Token");
@@ -14,8 +15,8 @@ let transporter = nodemailer.createTransport({
   // port: 587,
   secure: false,
   auth: {
-    user: "ekpotwisdom@gmail.com",
-    pass: "spinosky"
+    user: proces.env.EMAIL,
+    pass: proces.env.PASSWORD
   },
   tls: {
     rejectUnauthorized: false
@@ -27,9 +28,13 @@ let transporter = nodemailer.createTransport({
 exports.registerNewUser = async (req, res) => {
   // check if email is in use
 
-  let checkuser = await User.find({ email: req.body.email });
+  let checkuser = await User.find({
+    email: req.body.email
+  });
   if (checkuser.length >= 1) {
-    res.status(400).json({ error: "Email Already in use" });
+    res.status(400).json({
+      error: "Email Already in use"
+    });
   } else {
     let user = new User({
       name: req.body.name,
@@ -39,7 +44,9 @@ exports.registerNewUser = async (req, res) => {
     });
     user.save((err, user) => {
       if (err) {
-        res.status(400).json({ error: err });
+        res.status(400).json({
+          error: err
+        });
       }
 
       //generate new token using crypto
@@ -49,7 +56,9 @@ exports.registerNewUser = async (req, res) => {
       });
       token.save(err => {
         if (err) {
-          res.status(400).json({ error: err });
+          res.status(400).json({
+            error: err
+          });
         }
 
         let mailOptions = {
@@ -57,8 +66,7 @@ exports.registerNewUser = async (req, res) => {
           to: user.email,
           subject: "Account Verification Token",
           // this is the body of the mail that is sent the the valid user
-          text:
-            "Hello,\n\n" +
+          text: "Hello,\n\n" +
             "Please verify your account by clicking the link: \nhttp://" +
             req.headers.host +
             "/user/confirmation/" +
@@ -69,7 +77,9 @@ exports.registerNewUser = async (req, res) => {
         //send mail to user
         transporter.sendMail(mailOptions, err => {
           if (err) {
-            return res.status(500).send({ msg: err.message });
+            return res.status(500).send({
+              msg: err.message
+            });
           }
           res
             .status(200)
@@ -82,14 +92,18 @@ exports.registerNewUser = async (req, res) => {
 
 //confirm Email
 exports.confirmToken = async (req, res, next) => {
-  Token.findOne({ token: req.params.token }, (err, token) => {
+  Token.findOne({
+    token: req.params.token
+  }, (err, token) => {
     if (!token)
       return res.status(400).send({
         type: "not-verified",
         msg: "We were unable to find a valid token. Your token my have expired."
       });
 
-    User.findOne({ _id: token._userId }, (err, user) => {
+    User.findOne({
+      _id: token._userId
+    }, (err, user) => {
       if (!user)
         return res.status(400).send({
           msg: "We were unable to find a user for this token."
@@ -114,7 +128,9 @@ exports.confirmToken = async (req, res, next) => {
   });
 };
 exports.resendConfirmationToken = async (req, res, next) => {
-  User.findOne({ email: req.body.email }, (err, user) => {
+  User.findOne({
+    email: req.body.email
+  }, (err, user) => {
     //check for errors
     if (err) {
       return res.status(500).send({
@@ -142,7 +158,9 @@ exports.resendConfirmationToken = async (req, res, next) => {
     });
     token.save(err => {
       if (err) {
-        return res.status(500).send({ msg: err.message });
+        return res.status(500).send({
+          msg: err.message
+        });
       }
 
       let mailOptions = {
@@ -150,8 +168,7 @@ exports.resendConfirmationToken = async (req, res, next) => {
         to: user.email,
         subject: "Account Verification Token",
         // this is the body of the mail that is sent the the valid user
-        text:
-          "Hello,\n\n" +
+        text: "Hello,\n\n" +
           "Please verify your account by clicking the link: \nhttp://" +
           req.headers.host +
           "/confirmation/" +
@@ -161,7 +178,9 @@ exports.resendConfirmationToken = async (req, res, next) => {
 
       transporter.sendMail(mailOptions, err => {
         if (err) {
-          return res.status(500).send({ msg: err.message });
+          return res.status(500).send({
+            msg: err.message
+          });
         }
         res
           .status(200)
@@ -177,7 +196,9 @@ exports.forgotPassword = (req, res) => {
       //first function ==> to find user
       done => {
         // find user with his or her email
-        User.findOne({ email: req.body.email }).exec((err, user) => {
+        User.findOne({
+          email: req.body.email
+        }).exec((err, user) => {
           if (user) {
             done(err, user);
           } else {
@@ -198,12 +219,17 @@ exports.forgotPassword = (req, res) => {
         console.log(user);
         // find user using the user id and set the reset password token to the generated token
         User.findByIdAndUpdate(
-          { _id: user._id },
+          {
+            _id: user._id
+          },
           {
             resetPasswordToken: token,
             resetPasswordExpires: Date.now() + 86400000
           },
-          { upsert: true, new: true }
+          {
+            upsert: true,
+            new: true
+          }
         ).exec(function(err, new_user) {
           done(err, token, new_user);
         });
@@ -215,8 +241,7 @@ exports.forgotPassword = (req, res) => {
           from: "no-reply@yourwebapplication.com",
           template: "forgot-password-email",
           subject: "Password help has arrived!",
-          text:
-            "Hello,\n\n" +
+          text: "Hello,\n\n" +
             "Please reset you password by clicking the link: \nhttp://" +
             req.headers.host +
             "/user/reset-password/" +
@@ -238,7 +263,9 @@ exports.forgotPassword = (req, res) => {
       }
     ],
     err => {
-      return res.status(422).json({ message: err });
+      return res.status(422).json({
+        message: err
+      });
     }
   );
 };
@@ -266,8 +293,7 @@ exports.resetPassword = (req, res) => {
               from: "no-reply@yourwebapplication.com",
               template: "forgot-password-email",
               subject: "Password Changed!",
-              text:
-                "Hello,\n\n" +
+              text: "Hello,\n\n" +
                 "This is a confirmation that the password for your account " +
                 user.email +
                 " has just been changed.\n"
@@ -308,13 +334,19 @@ exports.getUserToken = (req, res) => {
   User.findOne(
     {
       resetPasswordToken: req.params.token,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordExpires: {
+        $gt: Date.now()
+      }
     },
     (err, user) => {
       if (!user) {
-        res.status(500).json({ error: err });
+        res.status(500).json({
+          error: err
+        });
       } else {
-        console.log({ data: user });
+        console.log({
+          data: user
+        });
       }
     }
   );
@@ -322,7 +354,9 @@ exports.getUserToken = (req, res) => {
 exports.loginUser = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  User.findOne({ email: email }, (err, user) => {
+  User.findOne({
+    email: email
+  }, (err, user) => {
     if (err) {
       res.status(404).json(err);
     }
@@ -354,7 +388,9 @@ exports.loginUser = async (req, res, next) => {
             }
           },
           "secret",
-          { expiresIn: 604800 }
+          {
+            expiresIn: 604800
+          }
         );
         return res.status(200).json({
           success: true,
